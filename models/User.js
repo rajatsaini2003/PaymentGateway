@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
     name:{
         type:String,
         required:true
@@ -15,6 +15,13 @@ const User = new mongoose.Schema({
     role:{
         type:String,
         default:'user'
+    },
+    token: {
+        type: String,
+    },
+    tokenExpiresAt:{
+        type:Date,
+        default: new Date(Date.now()+24*60*60*1000)
     }
 })
 
