@@ -70,6 +70,50 @@ Sanitize all incoming data
 
 Securely store secrets (e.g. with AWS Secrets Manager)
 
+## 🔐 `generateSignature.js` — Razorpay Signature Generator (For Manual Testing)
+
+This utility script helps manually generate a valid Razorpay signature for testing payment verification in Postman or backend, without using the Razorpay Checkout frontend.
+
+---
+
+### 📌 Why Use This?
+
+When testing payments without a frontend, you won't receive a real `razorpay_signature`. This script generates a mock signature using the same logic Razorpay uses, so you can test your `/api/payment/verify` API route properly.
+
+---
+
+### 🛠️ How to Use
+
+1. **Ensure the script exists at:**  
+utils/generateSignature.js
+
+
+
+
+2. **Set your secret in .env (in project root):**
+
+```
+RAZORPAY_KEY_SECRET=your_actual_razorpay_secret
+```
+3. **Run the script from the project root:**
+```
+node utils/generateSignature.js
+```
+4.  **Use the output signature in your Postman request to : ***/api/payment/verify:*****
+
+```
+{
+  "razorpay_order_id": "order_id_from_create_order",
+  "razorpay_payment_id": "pay_XXXXXXX",
+  "razorpay_signature": "OUTPUT_FROM_SCRIPT",
+  "amount": 500
+}
+```
+5. **Example Output**
+```
+Generated Razorpay Signature: 123456abcdef7890abcd123456abcdef7890abcd123456abcdef7890abcd1234
+```
+
 ## 🧭 Roadmap / Future Enhancements
 Integrate Razorpay and PayPal
 
