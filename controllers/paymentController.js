@@ -2,6 +2,7 @@ require("dotenv").config();
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const Transaction = require("../models/Transaction");
+const User = require("../models/User");
 
 const instance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -41,12 +42,42 @@ exports.verifyPayment = async (req, res) => {
         status: "success"
       });
       await transaction.save();
-      res.json({ msg: "Payment verified and recorded" });
+      const user = await User.findByIdAndUpdate(req.user.id,{
+        $push:{
+          transactions:transaction._id
+        },
+      },
+      {new: true}
+    )
+      return res.status(200).json({
+        msg: "Payment verified and recorded",
+        user
+      });
     } else {
       res.status(400).json({ msg: "Invalid signature" });
     }
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Verification failed" });
+  }
+};
+
+
+exports.getTransactions = async (req, res) => {
+  try {
+    const transactions = await Transaction.find({ user: req.user.id })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: transactions.length,
+      transactions
+    });
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Unable to fetch transactions"
+    });
   }
 };

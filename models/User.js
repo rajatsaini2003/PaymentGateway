@@ -22,7 +22,11 @@ const UserSchema = new mongoose.Schema({
     tokenExpiresAt:{
         type:Date,
         default: new Date(Date.now()+24*60*60*1000)
-    }
+    },
+    transactions: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Transaction"
+    }]
 })
 
 module.exports = mongoose.model("User", UserSchema);
