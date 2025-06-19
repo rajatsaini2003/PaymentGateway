@@ -49,6 +49,7 @@ exports.verifyPayment = async (req, res) => {
       },
       {new: true}
     )
+    user.password=undefined
       return res.status(200).json({
         msg: "Payment verified and recorded",
         user
@@ -145,17 +146,41 @@ exports.verifySubscription = async (req, res) => {
     await subscription.save();
 
     // Step 3: Link to user
-    await User.findByIdAndUpdate(req.user.id, {
-      $push: { subscriptions: subscription._id },
+    const user = await User.findByIdAndUpdate(req.user.id, {
+      $push: {
+        subscriptions: subscription._id
+      }
     });
-
+    user.password=undefined
     return res.status(200).json({
       success: true,
       message: "Subscription verified and saved successfully",
       subscription,
+      user
     });
   } catch (error) {
     console.error("Subscription verification error:", error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Server error" 
+    });
+  }
+};
+
+
+exports.getSubscriptions = async (req, res) => {
+  try {
+    const subscriptions = await Subscription.find({ user: req.user.id }).sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      count: subscriptions.length,
+      subscriptions,
+    });
+  } catch (err) {
+    console.error("Error fetching subscriptions:", err);
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to fetch subscriptions" 
+    });
   }
 };

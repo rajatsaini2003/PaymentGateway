@@ -26,7 +26,12 @@ const UserSchema = new mongoose.Schema({
     transactions: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Transaction"
+    }],
+    subscriptions: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Subscription"
     }]
+
 })
 
 module.exports = mongoose.model("User", UserSchema);
