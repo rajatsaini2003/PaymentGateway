@@ -1,13 +1,13 @@
 # 💳 Payment Gateway System
 
-A secure, server-side payment gateway system built using Node.js, Express, and MongoDB. This project handles user authentication, integrates with real payment processors like Stripe, logs transactions, and supports subscription management and fraud detection.
+A secure, server-side payment gateway system built using Node.js, Express, and MongoDB. This project handles user authentication, integrates with real payment processors like Razorpay, logs transactions, and supports subscription management and fraud detection.
 
 ---
 
 ## 🚀 Features
 
 - 🔐 User authentication using JWT
-- 💳 Payment processing via Stripe (can be extended to PayPal, Razorpay, etc.)
+- 💳 Payment processing via Razorpay (can be extended to PayPal, stripe, etc.)
 - 📊 Transaction logging and reporting
 - 🔁 Subscription handling
 - 🛡️ Fraud detection measures
@@ -20,7 +20,7 @@ A secure, server-side payment gateway system built using Node.js, Express, and M
 - **Backend:** Node.js, Express.js
 - **Database:** MongoDB + Mongoose
 - **Authentication:** JWT, bcrypt
-- **Payment Gateway:** Stripe
+- **Payment Gateway:** Razorpay
 - **Security Tools:** Helmet, CORS, Rate Limiting
 
 ---
@@ -150,7 +150,7 @@ Generated Razorpay Signature: 123456abcdef7890abcd123456abcdef7890abcd123456abcd
 - Ensure razorpay_signature is always validated on the backend to prevent spoofing
 
 ## 🧭 Roadmap / Future Enhancements
-- Integrate Stripe and PayPal
+- Integrate Razorpay and PayPal
 
 - Build a frontend dashboard (React/Next.js)
 
