@@ -184,3 +184,50 @@ exports.getSubscriptions = async (req, res) => {
     });
   }
 };
+
+
+
+// Webhook Controller
+exports.handleWebhook = (req, res) => {
+  try {
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    const signature = req.headers["x-razorpay-signature"];
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(req.body)
+      .digest("hex");
+
+    if (signature !== expectedSignature) {
+      console.warn("❌ Invalid webhook signature");
+      return res.status(400).json({ success: false, message: "Invalid signature" });
+    }
+
+    const event = JSON.parse(req.body.toString());
+
+    console.log("📦 Razorpay Webhook Received:", event.event);
+
+    // Placeholder for handling different events
+    switch (event.event) {
+      case "payment.captured":
+        console.log("💰 Payment Captured:", event.payload.payment.entity);
+        break;
+      case "payment.failed":
+        console.log("❌ Payment Failed:", event.payload.payment.entity);
+        break;
+      case "subscription.charged":
+        console.log("🔁 Subscription Charged:", event.payload.payment.entity);
+        break;
+      case "subscription.completed":
+        console.log("✅ Subscription Completed:", event.payload.subscription.entity);
+        break;
+      default:
+        console.log("ℹ️ Unhandled event type");
+    }
+
+    res.status(200).json({ success: true, message: "Webhook received" });
+  } catch (err) {
+    console.error("🚨 Webhook handler error:", err);
+    res.status(500).json({ success: false, message: "Webhook processing failed" });
+  }
+};
