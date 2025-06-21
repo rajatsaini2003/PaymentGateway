@@ -137,6 +137,7 @@ node utils/generateSubscriptionSignature.js
   "razorpay_signature": "generated_from_script",
   "plan_id": "plan_XXXXXXX"
 }
+similary for generateWebhookSignature.js
 ```
 5. **Example Output**
 ```
