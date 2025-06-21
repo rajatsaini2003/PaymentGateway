@@ -14,7 +14,8 @@ const TransactionSchema = new mongoose.Schema({
         default:'INR'
     },
     paymentId:{
-        type:String
+        type:String,
+        unique:true
     },
     status:{
         type:String

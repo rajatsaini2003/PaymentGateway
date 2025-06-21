@@ -15,7 +15,10 @@ exports.createOrder = async(req,res)=>{
         const options={
             amount:amount*100,
             currency:'INR',
-            receipt: `receipt_order_${Math.random().toString(36).slice(2)}`
+            receipt: `receipt_order_${Math.random().toString(36).slice(2)}`,
+            notes: {
+              userId: req.user.id,
+            }
         }
         const order = await instance.orders.create(options);
         res.json(order);
@@ -97,7 +100,10 @@ exports.createSubscription = async (req, res) => {
     const createdSubscription = await razorpay.subscriptions.create({
       plan_id: planId,
       customer_notify: 1,
-      total_count: 12, // 12 billing cycles (e.g. monthly = 1 year)
+      total_count: 12, // 12 billing cycles (e.g. monthly = 1 year),
+      notes: {
+        userId: req.user.id,
+      }
     });
 
     res.status(200).json({
