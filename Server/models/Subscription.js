@@ -5,8 +5,8 @@ const SubscriptionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
   },
-  razorpay_subscription_id: String,
-  razorpay_plan_id: String,
+  razorpay_subscription_id: { type: String, required: true },
+  razorpay_plan_id: { type: String, required: true },
   status: {
     type: String,
     enum: ["created", "active", "cancelled", "completed", "pending"],
