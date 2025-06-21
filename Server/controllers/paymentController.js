@@ -189,7 +189,6 @@ exports.getSubscriptions = async (req, res) => {
 
 // Webhook Controller
 
-
 exports.handleWebhook = async (req, res) => {
   try {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
