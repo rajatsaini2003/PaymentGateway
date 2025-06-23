@@ -8,7 +8,8 @@ import { loadRazorpay } from '@/lib/razorpay';
 import { useAuth } from '@/hooks/useAuth';
 
 const SUBSCRIPTION_PLANS = [
-  { id: 'plan_Qj8nMr5pdMtqBB', name: 'Basic Plan', price: 100, duration: 'Monthly' }
+  { id: 'plan_Qj8nMr5pdMtqBB', name: 'Basic Plan', price: 100, duration: 'Monthly' },
+  { id: 'plan_QkbYF2RjLJPGq6', name: 'Gold Plan', price: 10, duration: 'Weekly' }
 ];
 
 export function SubscriptionForm() {

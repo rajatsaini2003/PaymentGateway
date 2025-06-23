@@ -88,16 +88,12 @@ exports.getTransactions = async (req, res) => {
 
 
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
 
 exports.createSubscription = async (req, res) => {
   try {
     const { planId } = req.body;
 
-    const createdSubscription = await razorpay.subscriptions.create({
+    const createdSubscription = await instance.subscriptions.create({
       plan_id: planId,
       customer_notify: 1,
       total_count: 12, // 12 billing cycles (e.g. monthly = 1 year),
@@ -195,3 +191,18 @@ exports.getSubscriptions = async (req, res) => {
 
 
 
+// Example Express controller
+exports.cancelSubscription = async (req, res) => {
+  try {
+    const { subscriptionId } = req.body;
+    // Call Razorpay API to cancel
+     await instance.subscriptions.cancel(subscriptionId);
+    await Subscription.findOneAndUpdate(
+      { razorpay_subscription_id: subscriptionId },
+      { status: 'cancelled' }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to cancel subscription' });
+  }
+};

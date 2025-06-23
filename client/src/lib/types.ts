@@ -20,13 +20,13 @@ export interface Subscription {
   user: string;
   razorpay_subscription_id: string;
   razorpay_plan_id: string;
-  status: 'created' | 'active' | 'cancelled' | 'completed';
+  status: 'created' | 'active' | 'cancelled' | 'completed' | 'pending';
   current_period_start: string;
   current_period_end: string;
   createdAt: string;
   updatedAt?: string;
+  pending_invoice: { short_url: string; };
 }
-
 export interface RazorpayOrder {
   id: string;
   amount: number;

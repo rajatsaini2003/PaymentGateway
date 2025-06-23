@@ -144,6 +144,13 @@ class ApiClient {
     }>('/api/payment/subscriptions');
     return response.subscriptions;
   }
+  // In api.ts
+    async cancelSubscription(data: { subscriptionId: string }) {
+    return this.request('/api/payment/subscription/cancel', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+    }
 }
 
 export const api = new ApiClient();
