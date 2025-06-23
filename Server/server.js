@@ -11,7 +11,12 @@ const app = express();
 
 connectDB();
 
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://localhost:3001'], // Add your frontend URLs
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.post("/api/payment/webhook", express.raw({ type: "application/json" }), handleWebhook);
 app.use(express.json());
 
