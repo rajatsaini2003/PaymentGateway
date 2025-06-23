@@ -1,0 +1,149 @@
+import { User, Subscription, PaymentFormData, RazorpayOrder, Transaction } from "./types";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+import { useAuth } from '@/hooks/useAuth';
+
+class ApiClient {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    // Get token from your auth store
+    const token = useAuth.getState().token;
+    
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+      },
+      credentials: 'include',
+      ...options,
+    };
+
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ msg: 'Network error' }));
+      throw new Error(error.msg || error.message || 'Something went wrong');
+    }
+
+    return response.json();
+  }
+
+  // Auth methods
+  async register(data: { name: string; email: string; password: string }) {
+    const response = await this.request<{ token: string; user: User }>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    
+    // Set token and user in store after successful registration
+    if (response.token) {
+      useAuth.getState().login(response.user, response.token);
+    }
+    
+    return response;
+  }
+
+  async login(data: { email: string; password: string }) {
+    const response = await this.request<{ 
+      success: boolean; 
+      message: string; 
+      token: string; 
+      existingUser: User 
+    }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    
+    // Set token and user in store after successful login
+    if (response.token) {
+      useAuth.getState().login(response.existingUser, response.token);
+    }
+    
+    return {
+      user: response.existingUser,
+      token: response.token
+    };
+  }
+
+  async logout() {
+    // Clear token from store
+    useAuth.getState().logout();
+  }
+
+  // Rest of your methods remain the same...
+  async createOrder(data: PaymentFormData) {
+    return this.request<RazorpayOrder>('/api/payment/create-order', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async verifyPayment(data: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    amount?: number;
+  }) {
+    return this.request<{ msg: string; user: User }>(
+      '/api/payment/verify',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
+  async getTransactions() {
+    const response = await this.request<{ 
+      success: boolean; 
+      count: number; 
+      transactions: Transaction[] 
+    }>('/api/payment/transactions');
+    return response.transactions;
+  }
+
+  async createSubscription(data: { planId: string }) {
+    console.log("here")
+    const response = await this.request<{ 
+      success: boolean; 
+      subscription: any 
+    }>('/api/payment/subscribe', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return { subscription_id: response.subscription.id };
+  }
+
+  async verifySubscription(data: {
+    razorpay_payment_id: string;
+    razorpay_subscription_id: string;
+    razorpay_signature: string;
+    plan_id?: string;
+  }) {
+    return this.request<{ 
+      success: boolean; 
+      message: string; 
+      subscription: Subscription; 
+      user: User 
+    }>('/api/payment/verify-subscription', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSubscriptions() {
+    const response = await this.request<{ 
+      success: boolean; 
+      count: number; 
+      subscriptions: Subscription[] 
+    }>('/api/payment/subscriptions');
+    return response.subscriptions;
+  }
+}
+
+export const api = new ApiClient();
