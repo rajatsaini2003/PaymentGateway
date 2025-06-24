@@ -14,6 +14,12 @@ export interface Transaction {
   createdAt: string;
   updatedAt?: string;
 }
+export interface PendingInvoice {
+  short_url: string;
+  invoice_id: string;
+  amount: number; // Amount in paise (multiply by 100 for rupees)
+  due_date: number; // Unix timestamp
+}
 
 export interface Subscription {
   _id: string;
@@ -25,7 +31,7 @@ export interface Subscription {
   current_period_end: string;
   createdAt: string;
   updatedAt?: string;
-  pending_invoice: { short_url: string; };
+  pending_invoice?: PendingInvoice | null;
 }
 export interface RazorpayOrder {
   id: string;

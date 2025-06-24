@@ -108,7 +108,6 @@ class ApiClient {
   }
 
   async createSubscription(data: { planId: string }) {
-    console.log("here")
     const response = await this.request<{ 
       success: boolean; 
       subscription: any 
@@ -124,6 +123,7 @@ class ApiClient {
     razorpay_subscription_id: string;
     razorpay_signature: string;
     plan_id?: string;
+    duration:string;
   }) {
     return this.request<{ 
       success: boolean; 

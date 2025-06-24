@@ -36,7 +36,7 @@ export function SubscriptionForm() {
     fetchSubscriptions();
   }, []);
 
-  const handleSubscribe = async (planId: string, price: number) => {
+  const handleSubscribe = async (planId: string, duration:string) => {
     if (!user) return;
 
     setLoading(true);
@@ -67,6 +67,7 @@ export function SubscriptionForm() {
               razorpay_subscription_id: response.razorpay_subscription_id,
               razorpay_signature: response.razorpay_signature,
               plan_id: planId,
+              duration:duration
             });
             alert('Subscription successful!');
             setActivePlans((prev) => [...prev, planId]);
@@ -120,7 +121,7 @@ export function SubscriptionForm() {
                 </p>
                 <p className="text-gray-500 mb-4">{plan.duration}</p>
                 <Button
-                  onClick={() => handleSubscribe(plan.id, plan.price)}
+                  onClick={() => handleSubscribe(plan.id, plan.duration)}
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-indigo-200 to-amber-200 text-indigo-900 font-semibold shadow hover:scale-105 transition-transform"
                 >

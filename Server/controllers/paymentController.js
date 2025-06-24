@@ -124,6 +124,7 @@ exports.verifySubscription = async (req, res) => {
       razorpay_payment_id,
       razorpay_subscription_id,
       razorpay_signature,
+      duration
     } = req.body;
 
     // Step 1: Generate expected signature
@@ -134,17 +135,18 @@ exports.verifySubscription = async (req, res) => {
     if (generatedSignature !== razorpay_signature) {
       return res.status(400).json({ success: false, message: "Invalid signature" });
     }
-
+    const end = duration==='Weekly'? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000
     // Step 2: Save subscription to DB
     const subscription = new Subscription({
       user: req.user.id,
       razorpay_subscription_id,
       razorpay_plan_id: req.body.plan_id, // optional but useful
       status: "active",
-      current_period_start: new Date(), // Razorpay doesn't send this, so estimate for now
-      current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // e.g., monthly
+      current_period_start: new Date(Date.now()), 
+      current_period_end: new Date(Date.now() + end), 
     });
-
+    const razorpaySubscription = await instance.subscriptions.fetch(razorpay_subscription_id);
+    console.log(razorpaySubscription)
     await subscription.save();
 
     // Step 3: Link to user
@@ -190,8 +192,6 @@ exports.getSubscriptions = async (req, res) => {
 
 
 
-
-// Example Express controller
 exports.cancelSubscription = async (req, res) => {
   try {
     const { subscriptionId } = req.body;
