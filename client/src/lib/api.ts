@@ -1,4 +1,4 @@
-import { User, Subscription, PaymentFormData, RazorpayOrder, Transaction } from "./types";
+import { User, Subscription, PaymentFormData, RazorpayOrder, Transaction, SubscriptionNotification } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,7 +10,7 @@ class ApiClient {
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     
-    // Get token from your auth store
+    // Get token from auth store
     const token = useAuth.getState().token;
     
     const config: RequestInit = {
@@ -49,11 +49,11 @@ class ApiClient {
   }
 
   async login(data: { email: string; password: string }) {
-    const response = await this.request<{ 
-      success: boolean; 
-      message: string; 
-      token: string; 
-      existingUser: User 
+    const response = await this.request<{
+      success: boolean;
+      message: string;
+      token: string;
+      existingUser: User
     }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -75,7 +75,7 @@ class ApiClient {
     useAuth.getState().logout();
   }
 
-  // Rest of your methods remain the same...
+  // Payment methods
   async createOrder(data: PaymentFormData) {
     return this.request<RazorpayOrder>('/api/payment/create-order', {
       method: 'POST',
@@ -99,18 +99,19 @@ class ApiClient {
   }
 
   async getTransactions() {
-    const response = await this.request<{ 
-      success: boolean; 
-      count: number; 
-      transactions: Transaction[] 
+    const response = await this.request<{
+      success: boolean;
+      count: number;
+      transactions: Transaction[]
     }>('/api/payment/transactions');
     return response.transactions;
   }
 
+  // Subscription methods
   async createSubscription(data: { planId: string }) {
-    const response = await this.request<{ 
-      success: boolean; 
-      subscription: any 
+    const response = await this.request<{
+      success: boolean;
+      subscription: any
     }>('/api/payment/subscribe', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -123,13 +124,13 @@ class ApiClient {
     razorpay_subscription_id: string;
     razorpay_signature: string;
     plan_id?: string;
-    duration:string;
+    duration: string;
   }) {
-    return this.request<{ 
-      success: boolean; 
-      message: string; 
-      subscription: Subscription; 
-      user: User 
+    return this.request<{
+      success: boolean;
+      message: string;
+      subscription: Subscription;
+      user: User
     }>('/api/payment/verify-subscription', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -137,20 +138,75 @@ class ApiClient {
   }
 
   async getSubscriptions() {
-    const response = await this.request<{ 
-      success: boolean; 
-      count: number; 
-      subscriptions: Subscription[] 
+    const response = await this.request<{
+      success: boolean;
+      count: number;
+      subscriptions: Subscription[]
     }>('/api/payment/subscriptions');
     return response.subscriptions;
   }
-  // In api.ts
-    async cancelSubscription(data: { subscriptionId: string }) {
-    return this.request('/api/payment/subscription/cancel', {
-        method: 'POST',
-        body: JSON.stringify(data),
+
+  async cancelSubscription(data: { subscriptionId: string }) {
+    return this.request<{
+      success: boolean;
+      message: string;
+    }>('/api/payment/subscription/cancel', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
-    }
+  }
+
+  // NEW: Enhanced subscription management methods
+  async getSubscriptionNotifications() {
+    const response = await this.request<{
+      success: boolean;
+      subscriptions: Subscription[];
+      notifications: SubscriptionNotification[];
+    }>('/api/payment/subscriptions/notifications');
+    
+    return {
+      subscriptions: response.subscriptions,
+      notifications: response.notifications
+    };
+  }
+
+  async syncSubscriptionStatus(subscriptionId: string) {
+    return this.request<{
+      success: boolean;
+      subscription: Subscription;
+      message: string;
+    }>(`/api/payment/subscriptions/sync/${subscriptionId}`, {
+      method: 'POST',
+    });
+  }
+
+  // NEW: Get detailed subscription info
+  async getSubscriptionDetails(subscriptionId: string) {
+    return this.request<{
+      success: boolean;
+      subscription: Subscription;
+    }>(`/api/payment/subscriptions/${subscriptionId}`);
+  }
+
+  // NEW: Update subscription (pause/resume if needed)
+  async updateSubscription(subscriptionId: string, data: { action: 'pause' | 'resume' }) {
+    return this.request<{
+      success: boolean;
+      subscription: Subscription;
+      message: string;
+    }>(`/api/payment/subscriptions/${subscriptionId}/update`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // NEW: Get subscription payment history
+  async getSubscriptionPayments(subscriptionId: string) {
+    return this.request<{
+      success: boolean;
+      payments: any[];
+    }>(`/api/payment/subscriptions/${subscriptionId}/payments`);
+  }
 }
 
 export const api = new ApiClient();

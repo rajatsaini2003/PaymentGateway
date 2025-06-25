@@ -145,8 +145,6 @@ exports.verifySubscription = async (req, res) => {
       current_period_start: new Date(Date.now()), 
       current_period_end: new Date(Date.now() + end), 
     });
-    const razorpaySubscription = await instance.subscriptions.fetch(razorpay_subscription_id);
-    console.log(razorpaySubscription)
     await subscription.save();
 
     // Step 3: Link to user
@@ -172,25 +170,447 @@ exports.verifySubscription = async (req, res) => {
 };
 
 
+// Get existing subscriptions 
 exports.getSubscriptions = async (req, res) => {
   try {
-    const subscriptions = await Subscription.find({ user: req.user.id }).sort({ createdAt: -1 });
+    const subscriptions = await Subscription.find({ user: req.user.id })
+      .sort({ createdAt: -1 });
+
     res.status(200).json({
       success: true,
       count: subscriptions.length,
-      subscriptions,
+      subscriptions
     });
-  } catch (err) {
-    console.error("Error fetching subscriptions:", err);
-    res.status(500).json({ 
+  } catch (error) {
+    console.error("Error fetching subscriptions:", error);
+    res.status(500).json({
       success: false,
-      message: "Failed to fetch subscriptions" 
+      message: "Failed to fetch subscriptions"
     });
   }
 };
 
+// NEW: Enhanced method with notifications
+exports.getSubscriptionNotifications = async (req, res) => {
+  try {
+    const subscriptions = await Subscription.find({ user: req.user.id })
+      .sort({ createdAt: -1 });
 
+    const notifications = [];
+    const now = new Date();
 
+    subscriptions.forEach(sub => {
+      // Payment due soon (3 days before)
+      if (sub.status === 'active') {
+        const daysToDue = Math.ceil((sub.current_period_end - now) / (1000 * 60 * 60 * 24));
+        if (daysToDue <= 3 && daysToDue > 0) {
+          notifications.push({
+            type: 'payment_due_soon',
+            message: `Payment due in ${daysToDue} day${daysToDue > 1 ? 's' : ''} for subscription ${sub.razorpay_plan_id}`,
+            subscriptionId: sub.razorpay_subscription_id,
+            severity: 'warning'
+          });
+        }
+      }
+
+      // Payment overdue
+      if (sub.status === 'pending') {
+        const daysOverdue = Math.ceil((now - sub.current_period_end) / (1000 * 60 * 60 * 24));
+        if (daysOverdue > 0) {
+          notifications.push({
+            type: 'payment_overdue',
+            message: `Payment overdue by ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} for subscription ${sub.razorpay_plan_id}`,
+            subscriptionId: sub.razorpay_subscription_id,
+            severity: 'error'
+          });
+        }
+      }
+
+      // Multiple payment failures
+      if (sub.payment_failed_count && sub.payment_failed_count >= 2) {
+        notifications.push({
+          type: 'payment_failed',
+          message: `Multiple payment failures (${sub.payment_failed_count}) for subscription ${sub.razorpay_plan_id}`,
+          subscriptionId: sub.razorpay_subscription_id,
+          severity: 'error'
+        });
+      }
+    });
+
+    res.json({
+      success: true,
+      subscriptions,
+      notifications
+    });
+
+  } catch (error) {
+    console.error('Error fetching subscription notifications:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch subscription notifications' 
+    });
+  }
+};
+
+// NEW: Sync subscription status with Razorpay
+exports.syncSubscriptionStatus = async (req, res) => {
+  try {
+    const { subscriptionId } = req.params;
+    
+    // Fetch latest status from Razorpay
+    const razorpaySubscription = await instance.subscriptions.fetch(subscriptionId);
+    
+    // Update local database
+    const subscription = await Subscription.findOne({
+      razorpay_subscription_id: subscriptionId,
+      user: req.user.id
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Subscription not found' 
+      });
+    }
+
+    // Update subscription with latest data from Razorpay
+    subscription.status = razorpaySubscription.status;
+    subscription.current_period_start = new Date(razorpaySubscription.current_start * 1000);
+    subscription.current_period_end = new Date(razorpaySubscription.current_end * 1000);
+    
+    // Update additional fields if available
+    if (razorpaySubscription.paid_count) {
+      subscription.paid_count = razorpaySubscription.paid_count;
+    }
+    if (razorpaySubscription.remaining_count) {
+      subscription.remaining_count = razorpaySubscription.remaining_count;
+    }
+    
+    await subscription.save();
+
+    res.json({
+      success: true,
+      subscription,
+      message: 'Subscription status synced successfully'
+    });
+
+  } catch (error) {
+    console.error('Error syncing subscription status:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to sync subscription status' 
+    });
+  }
+};
+
+// NEW: Get detailed subscription info
+exports.getSubscriptionDetails = async (req, res) => {
+  try {
+    const { subscriptionId } = req.params;
+    
+    const subscription = await Subscription.findOne({
+      razorpay_subscription_id: subscriptionId,
+      user: req.user.id
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Subscription not found' 
+      });
+    }
+
+    // Optionally fetch fresh data from Razorpay
+    try {
+      const razorpaySubscription = await instance.subscriptions.fetch(subscriptionId);
+      
+      res.json({
+        success: true,
+        subscription: {
+          ...subscription.toObject(),
+          razorpay_data: razorpaySubscription
+        }
+      });
+    } catch (razorpayError) {
+      // If Razorpay fetch fails, return local data only
+      res.json({
+        success: true,
+        subscription
+      });
+    }
+
+  } catch (error) {
+    console.error('Error fetching subscription details:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch subscription details' 
+    });
+  }
+};
+
+// NEW: Update subscription (pause/resume)
+exports.updateSubscription = async (req, res) => {
+  try {
+    const { subscriptionId } = req.params;
+    const { action } = req.body;
+
+    if (!['pause', 'resume'].includes(action)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid action. Use "pause" or "resume"' 
+      });
+    }
+
+    const subscription = await Subscription.findOne({
+      razorpay_subscription_id: subscriptionId,
+      user: req.user.id
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Subscription not found' 
+      });
+    }
+
+    let razorpayResponse;
+    
+    if (action === 'pause') {
+      razorpayResponse = await instance.subscriptions.pause(subscriptionId, {
+        pause_at: 'now'
+      });
+      subscription.status = 'halted';
+    } else if (action === 'resume') {
+      razorpayResponse = await instance.subscriptions.resume(subscriptionId, {
+        resume_at: 'now'
+      });
+      subscription.status = 'active';
+    }
+
+    await subscription.save();
+
+    res.json({
+      success: true,
+      subscription,
+      message: `Subscription ${action}d successfully`
+    });
+
+  } catch (error) {
+    console.error(`Error ${req.body.action}ing subscription:`, error);
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to ${req.body.action} subscription` 
+    });
+  }
+};
+
+// NEW: Get subscription payment history
+exports.getSubscriptionPayments = async (req, res) => {
+  try {
+    const { subscriptionId } = req.params;
+    
+    const subscription = await Subscription.findOne({
+      razorpay_subscription_id: subscriptionId,
+      user: req.user.id
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Subscription not found' 
+      });
+    }
+
+    // Fetch payments from Razorpay
+    const payments = await instance.subscriptions.fetchAllPayments(subscriptionId);
+
+    res.json({
+      success: true,
+      payments: payments.items || []
+    });
+
+  } catch (error) {
+    console.error('Error fetching subscription payments:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch subscription payments' 
+    });
+  }
+};
+
+// NEW: Handle subscription webhooks
+exports.handleSubscriptionWebhook = async (req, res) => {
+  try {
+    const webhookSignature = req.headers['x-razorpay-signature'];
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    
+    if (!webhookSecret) {
+      console.error('Webhook secret not configured');
+      return res.status(500).json({ error: 'Webhook secret not configured' });
+    }
+    
+    // Verify webhook signature
+    const crypto = require('crypto');
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+    
+    if (webhookSignature !== expectedSignature) {
+      console.error('Invalid webhook signature');
+      return res.status(400).json({ error: 'Invalid webhook signature' });
+    }
+
+    const { event, payload } = req.body;
+    console.log(`Processing webhook event: ${event}`);
+    
+    switch (event) {
+      case 'subscription.charged':
+        await handleSubscriptionCharged(payload.subscription.entity, payload.payment.entity);
+        break;
+      
+      case 'subscription.payment.failed':
+        await handleSubscriptionPaymentFailed(payload.subscription.entity);
+        break;
+      
+      case 'subscription.cancelled':
+        await handleSubscriptionCancelled(payload.subscription.entity);
+        break;
+      
+      case 'subscription.completed':
+        await handleSubscriptionCompleted(payload.subscription.entity);
+        break;
+      
+      case 'subscription.pending':
+        await handleSubscriptionPending(payload.subscription.entity);
+        break;
+      
+      default:
+        console.log(`Unhandled webhook event: ${event}`);
+    }
+    
+    res.status(200).json({ status: 'ok' });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+};
+
+// Webhook helper functions 
+const handleSubscriptionCharged = async (subscriptionData, paymentData) => {
+  try {
+    const subscription = await Subscription.findOne({
+      razorpay_subscription_id: subscriptionData.id
+    });
+    
+    if (!subscription) {
+      console.log(`Subscription not found: ${subscriptionData.id}`);
+      return;
+    }
+
+    subscription.status = 'active';
+    subscription.current_period_start = new Date(subscriptionData.current_start * 1000);
+    subscription.current_period_end = new Date(subscriptionData.current_end * 1000);
+    subscription.last_payment_date = new Date();
+    subscription.last_payment_amount = paymentData.amount / 100;
+    subscription.payment_failed_count = 0; // Reset failure count on successful payment
+    
+    await subscription.save();
+    console.log(`Subscription charged successfully: ${subscriptionData.id}`);
+
+  } catch (error) {
+    console.error('Error handling subscription charged:', error);
+  }
+};
+
+const handleSubscriptionPaymentFailed = async (subscriptionData) => {
+  try {
+    const subscription = await Subscription.findOne({
+      razorpay_subscription_id: subscriptionData.id
+    });
+    
+    if (!subscription) {
+      console.log(`Subscription not found: ${subscriptionData.id}`);
+      return;
+    }
+
+    subscription.status = 'pending';
+    subscription.payment_failed_count = (subscription.payment_failed_count || 0) + 1;
+    subscription.last_payment_attempt = new Date();
+    
+    await subscription.save();
+    console.log(`Subscription payment failed: ${subscriptionData.id}, Failure count: ${subscription.payment_failed_count}`);
+
+  } catch (error) {
+    console.error('Error handling payment failure:', error);
+  }
+};
+
+const handleSubscriptionCancelled = async (subscriptionData) => {
+  try {
+    const subscription = await Subscription.findOne({
+      razorpay_subscription_id: subscriptionData.id
+    });
+    
+    if (!subscription) {
+      console.log(`Subscription not found: ${subscriptionData.id}`);
+      return;
+    }
+
+    subscription.status = 'cancelled';
+    subscription.cancelled_at = new Date();
+    
+    await subscription.save();
+    console.log(`Subscription cancelled: ${subscriptionData.id}`);
+
+  } catch (error) {
+    console.error('Error handling subscription cancellation:', error);
+  }
+};
+
+const handleSubscriptionCompleted = async (subscriptionData) => {
+  try {
+    const subscription = await Subscription.findOne({
+      razorpay_subscription_id: subscriptionData.id
+    });
+    
+    if (!subscription) {
+      console.log(`Subscription not found: ${subscriptionData.id}`);
+      return;
+    }
+
+    subscription.status = 'completed';
+    subscription.completed_at = new Date();
+    
+    await subscription.save();
+    console.log(`Subscription completed: ${subscriptionData.id}`);
+
+  } catch (error) {
+    console.error('Error handling subscription completion:', error);
+  }
+};
+
+const handleSubscriptionPending = async (subscriptionData) => {
+  try {
+    const subscription = await Subscription.findOne({
+      razorpay_subscription_id: subscriptionData.id
+    });
+    
+    if (!subscription) {
+      console.log(`Subscription not found: ${subscriptionData.id}`);
+      return;
+    }
+
+    subscription.status = 'pending';
+    subscription.payment_due_date = new Date(subscriptionData.current_end * 1000);
+    
+    await subscription.save();
+    console.log(`Subscription pending: ${subscriptionData.id}`);
+
+  } catch (error) {
+    console.error('Error handling subscription pending:', error);
+  }
+};
 
 exports.cancelSubscription = async (req, res) => {
   try {

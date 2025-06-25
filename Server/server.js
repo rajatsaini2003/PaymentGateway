@@ -4,7 +4,6 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const auth = require('./routes/auth');
 const payment = require('./routes/payment')
-const { handleWebhook } = require("./controllers/webhookController");
 dotenv.config();
 
 const app = express();
@@ -17,7 +16,6 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.post("/api/payment/webhook", express.raw({ type: "application/json" }), handleWebhook);
 app.use(express.json());
 
 app.use("/api/auth",auth)
