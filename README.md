@@ -1,184 +1,182 @@
 # 💳 Payment Gateway System
 
-A secure, server-side payment gateway system built using Node.js, Express, and MongoDB. This project handles user authentication, integrates with real payment processors like Razorpay, logs transactions, and supports subscription management and fraud detection.
-
----
+A full-stack secure payment gateway system built using Node.js, Express, MongoDB, and Next.js. The system integrates Razorpay for both one-time payments and subscriptions, and offers a fully functional frontend dashboard for managing transactions, subscriptions, and notifications.
 
 ## 🚀 Features
 
-- 🔐 User authentication using JWT
-- 💳 Payment processing via Razorpay (can be extended to PayPal, stripe, etc.)
-- 📊 Transaction logging and reporting
-- 🔁 Subscription handling
-- 🛡️ Fraud detection measures
-- 📄 RESTful API design
+### 🧑‍💻 Authentication
 
----
+- JWT-based login and registration
+
+- Secure cookie storage
+
+### 💳 Payments
+
+- One-time payment creation and verification
+
+- Signature validation and transaction logging
+
+### 🔁 Subscriptions
+
+- Create, cancel, and sync Razorpay subscriptions
+
+- Dashboard UI for viewing active and cancelled plans
+
+- Notifications for failed or pending payments
+
+### 📊 Transactions
+
+- View all transactions by user
+
+- PDF invoice support (coming soon)
+
+### 🔔 Notifications
+
+- Alerts for upcoming renewals, overdue payments, and errors
 
 ## 🧰 Tech Stack
 
-- **Backend:** Node.js, Express.js
-- **Database:** MongoDB + Mongoose
-- **Authentication:** JWT, bcrypt
-- **Payment Gateway:** Razorpay
-- **Security Tools:** Helmet, CORS, Rate Limiting
+| Layer          | Technologies Used               |
+| -------------- | ------------------------------- |
+| Frontend       | Next.js 14, TypeScript, Tailwind CSS |
+| Backend        | Node.js, Express.js             |
+| Authentication | JWT, bcrypt                     |
+| Database       | MongoDB, Mongoose               |
+| Payments       | Razorpay                        |
+| Security       | Helmet, CORS, Rate Limiting     |
 
----
 
-## 🔧 Installation & Setup
+## 🔧 Setup Instructions
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/rajatsaini2003/PaymentGateway.git
-cd payment-gateway
+1. Clone the Repository
+
+``` git clone https://github.com/rajatsaini2003/PaymentGateway.git
+cd payment-gateway 
 ```
-### 2. Install Dependencies
-```bash
-npm install
-```
-### 3. Configure Environment Variables
-Create a .env file in the root with the following content:
 
-```bash
+2. Install Dependencies
+
+```
+ npm install
+```
+
+3. Configure Environment Variables
+
+- Create a .env file:
+```
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/payment_gateway
 JWT_SECRET=your_jwt_secret
 RAZORPAY_KEY_ID=your_razorpay_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 ```
-### 4. Start the Server
-```bash
+4. Start Backend
+```
+npm run dev
+```
+5. Start Frontend
+```
+cd client
+npm install
 npm run dev
 ```
 ## 📡 API Endpoints
-### 🔐 Authentication
-POST `/api/auth/register` — Register a new user
 
-POST `/api/auth/login` — Login user and receive JWT + HTTP-only cookie
+### 🔐 Auth
 
-### 💳 Payments
-POST `/api/payment/create-order` — Create Razorpay order (for one-time payment)
+- POST `/api/auth/register` – Register user
 
-POST `/api/payment/verify` — Verify payment signature and save transaction
+- POST `/api/auth/login` – Login user and receive JWT
 
-GET `/api/payment/transactions` — Get all transactions for the logged-in user
+### 💳 Payment
 
-### 🔁 Subscriptions
-POST `/api/payment/subscribe `— Create a Razorpay subscription (from backend)
+- POST `/api/payment/create-order` – Create Razorpay order
 
-POST `/api/payment/verify-subscription` — Verify subscription payment signature and save subscription
+- POST `/api/payment/verify` – Verify one-time payment
 
-GET `/api/payment/subscriptions` — Get all subscriptions for the logged-in user
+- GET `/api/payment/transactions` – User transactions
 
+### 🔁 Subscription
 
+- POST `/api/payment/subscribe` – Create subscription
 
-## 🛡️ Security Practices
-- Keep .env out of version control
+- POST `/api/payment/verify-subscription` – Verify subscription payment
 
-- Use HTTPS in production
+- GET `/api/payment/subscriptions `– Get all subscriptions
 
-- Sanitize all incoming data
+- POST` /api/payment/subscription/cancel` – Cancel subscription
 
-- Securely store secrets (e.g. with AWS Secrets Manager)
+- 📣 Subscription Enhancements
 
-## 🔐 `generateSignature.js & generateSubscriptionSignature.js ` — Razorpay Signature Generator (For Manual Testing)
+- GET `/api/payment/subscriptions/notifications` – Get subscription alerts
 
-This utility script helps manually generate a valid Razorpay signature for testing payment & subscription verification in Postman or backend, without using the Razorpay Checkout frontend.
+- POST `/api/payment/subscriptions/sync/:subscriptionId `– Sync status
 
----
+- GET `/api/payment/subscriptions/:subscriptionId `– Get subscription info
 
-### 📌 Why Use This?
+- POST` /api/payment/subscriptions/:subscriptionId/update` – Update subscription
 
-When testing payments or subscriptions without a frontend, you won't receive a real razorpay_signature.
+- GET `/api/payment/subscriptions/:subscriptionId/payments `– Subscription invoices
 
-This script generates a mock signature using Razorpay's own HMAC SHA256 logic, allowing you to test your:
+### 🕸 Webhooks
 
-`/api/payment/verify — for one-time payments`
+- POST `/api/payment/webhook/subscription` – Razorpay webhook handler
 
-`/api/payment/verify-subscription — for subscriptions`
+## 🛠️ Utility Scripts
 
----
+- Razorpay Signature Generator (Manual Testing)
 
-### 🛠️ How to Use
+- utils/generateSignature.js
 
-1. **Ensure these script exists at:**  
-- utils/generateSignature.js 
 - utils/generateSubscriptionSignature.js
 
+`Use these to simulate payment verification in Postman.`
 
-
-2. **Set your secret in .env (in project root):**
-
-```bash
-RAZORPAY_KEY_SECRET=your_actual_razorpay_secret
-```
-3. **Run the script from the project root:**
-```bash
-node utils/generateSignature.js
-node utils/generateSubscriptionSignature.js
-```
-4.  **Use the output signature in your Postman request to**
-
-🔁 For ***/api/payment/verify:***
+## 📁 Project Structure
 
 ```
-{
-  "razorpay_order_id": "order_id_from_create_order",
-  "razorpay_payment_id": "pay_XXXXXXX",
-  "razorpay_signature": "OUTPUT_FROM_SCRIPT",
-  "amount": 500
-}
+project-root/
+├── client/                   # Frontend (Next.js)
+│   ├── components/           # Reusable UI components
+│   ├── pages/                # Next.js pages
+│   ├── hooks/                # Custom React hooks (e.g., useAuth)
+│   ├── lib/                  # API clients, helpers, types
+│   └── public/               # Static assets
+│
+├── server/                   # Backend (Express.js)
+│   ├── controllers/          # Route handler logic
+│   ├── routes/               # Express route definitions
+│   ├── models/               # Mongoose schemas
+│   ├── middleware/           # Auth & error middleware
+│   ├── utils/                # Helpers (signature gen, etc.)
+│   └── config/               # DB and Razorpay setup
+│
+├── .env                      # Environment variables
+├── package.json              # Project metadata and dependencies
+└── README.md                 # Project documentation
 ```
-🔁 For ***/api/payment/verify-subscription:***
-```
-{
-  "razorpay_payment_id": "pay_XXXXXXX",
-  "razorpay_subscription_id": "sub_XXXXXXX",
-  "razorpay_signature": "generated_from_script",
-  "plan_id": "plan_XXXXXXX"
-}
-similary for generateWebhookSignature.js
-```
-5. **Example Output**
-```
-Generated Razorpay Signature: 123456abcdef7890abcd123456abcdef7890abcd123456abcdef7890abcd1234
-```
-### 📝 Notes
--  Only use these script for development or backend testing
 
-- In production, always use the signature provided by Razorpay Checkout
+## 🛡️ Security
 
-- Ensure razorpay_signature is always validated on the backend to prevent spoofing
+- JWT-secured APIs
 
-## 🧭 Roadmap / Future Enhancements
-- Integrate Razorpay and PayPal
+- Helmet, CORS, and rate-limiting
 
-- Build a frontend dashboard (React/Next.js)
+- HTTPS ready for production
 
-- Add Nodemailer for email receipts
+- .env excluded from version control
 
-- Implement webhook support
 
-- Add admin panel for transaction management
 
 ## 📄 License
-This project is licensed under the MIT License.
+
+MIT License
 
 ## 👨‍💻 Author
-Rajat Saini
 
-GitHub: github.com/rajatsaini2003
-
+Rajat Saini GitHub: @rajatsaini2003
 
 ## 🤝 Contributions
-Feel free to fork, submit pull requests, and contribute ideas!
 
-
-
-
-
-
-
-
-
+Pull requests and suggestions are welcome!
 
