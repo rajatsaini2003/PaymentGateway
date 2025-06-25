@@ -26,12 +26,96 @@ export interface Subscription {
   user: string;
   razorpay_subscription_id: string;
   razorpay_plan_id: string;
-  status: 'created' | 'active' | 'cancelled' | 'completed' | 'pending';
-  current_period_start: string;
-  current_period_end: string;
-  createdAt: string;
-  updatedAt?: string;
-  pending_invoice?: PendingInvoice | null;
+  status: 'active' | 'pending' | 'cancelled' | 'completed' | 'paused';
+  current_period_start: string | Date;
+  current_period_end: string | Date;
+  last_payment_date?: string | Date;
+  last_payment_amount?: number;
+  payment_failed_count?: number;
+  last_payment_attempt?: string | Date;
+  payment_due_date?: string | Date;
+  cancelled_at?: string | Date;
+  completed_at?: string | Date;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+export interface SubscriptionNotification {
+  type: 'payment_due_soon' | 'payment_overdue' | 'payment_failed' | 'general';
+  message: string;
+  subscriptionId: string;
+  severity: 'info' | 'warning' | 'error';
+}
+
+export interface WebhookPayload {
+  event: string;
+  payload: {
+    subscription: {
+      entity: RazorpaySubscription;
+    };
+    payment?: {
+      entity: RazorpayPayment;
+    };
+  };
+}
+export interface RazorpaySubscription {
+  id: string;
+  entity: string;
+  plan_id: string;
+  customer_id: string;
+  status: string;
+  current_start: number;
+  current_end: number;
+  ended_at?: number;
+  quantity: number;
+  notes: Record<string, any>;
+  charge_at: number;
+  start_at: number;
+  end_at: number;
+  auth_attempts: number;
+  total_count: number;
+  paid_count: number;
+  customer_notify: boolean;
+  created_at: number;
+  expire_by?: number;
+  short_url?: string;
+  has_scheduled_changes: boolean;
+  change_scheduled_at?: number;
+  source: string;
+  offer_id?: string;
+  remaining_count: number;
+}
+
+export interface RazorpayPayment {
+  id: string;
+  entity: string;
+  amount: number;
+  currency: string;
+  status: string;
+  order_id?: string;
+  invoice_id?: string;
+  international: boolean;
+  method: string;
+  amount_refunded: number;
+  refund_status?: string;
+  captured: boolean;
+  description?: string;
+  card_id?: string;
+  bank?: string;
+  wallet?: string;
+  vpa?: string;
+  email: string;
+  contact: string;
+  notes: Record<string, any>;
+  fee?: number;
+  tax?: number;
+  error_code?: string;
+  error_description?: string;
+  error_source?: string;
+  error_step?: string;
+  error_reason?: string;
+  acquirer_data?: Record<string, any>;
+  created_at: number;
 }
 export interface RazorpayOrder {
   id: string;
