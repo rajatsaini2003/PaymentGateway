@@ -10,23 +10,43 @@ import { SubscriptionForm } from '@/components/SubscriptionForm';
 import { SubscriptionList } from '@/components/SubscriptionList';
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user,isTokenExpired, isAuthenticated, logout } = useAuth();
   const router = useRouter();
-
+  console.log(user)
+  // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
     }
   }, [isAuthenticated, router]);
 
-  if (!isAuthenticated || !user) {
-    return <div>Loading...</div>;
-  }
+
+
+  // Check token expiry every 5 minutes
+  useEffect(() => {
+    const check = () => {
+      if (isTokenExpired()) {
+        logout();
+        router.push('/login');
+      }
+    };
+
+    // Initial check (on page load)
+    check();
+
+    const interval = setInterval(check, 5 * 60 * 1000); // Every 5 minutes
+
+    return () => clearInterval(interval);
+  }, [logout, router]);
 
   const handleLogout = () => {
     logout();
     router.push('/');
   };
+
+  if (!isAuthenticated || !user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-blue-50 to-amber-100 relative">
@@ -68,6 +88,7 @@ export default function DashboardPage() {
                 <SubscriptionForm />
               </div>
             </div>
+            {/* Right Column: Lists */}
             <div className="space-y-8">
               <div className="rounded-2xl shadow-lg bg-white/90 p-6 max-h-[400px] overflow-auto">
                 <TransactionList />

@@ -24,6 +24,7 @@ export function SubscriptionList() {
   }, []);
 
   const fetchSubscriptionsAndNotifications = async () => {
+    console.log("cliked")
     try {
       const data = await api.getSubscriptionNotifications();
       setSubscriptions(data.subscriptions);

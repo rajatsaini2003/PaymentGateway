@@ -35,10 +35,10 @@ exports.loginUser = async (req, res) => {
     const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, {
                 expiresIn: "24h"
             } )
-            existingUser.toObject();
             existingUser.token = token;
-            existingUser.password = undefined;
-            existingUser.tokenExpiresAt =  new Date(Date.now() +  24 * 60 * 60 * 1000)
+            existingUser.tokenExpiresAt =  new Date(Date.now() +  24 * 60 * 60 * 1000);
+            await existingUser.save();
+            existingUser.password=undefined
             //console.log(existingUser)
             const options = {
                 expires: new Date(Date.now() +  24 * 60 * 60 * 1000), // Same as token expiry
