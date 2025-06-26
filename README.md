@@ -106,7 +106,7 @@ npm run dev
 
 - POST` /api/payment/subscription/cancel` – Cancel subscription
 
-- 📣 Subscription Enhancements
+### 📣 Subscription Enhancements
 
 - GET `/api/payment/subscriptions/notifications` – Get subscription alerts
 
