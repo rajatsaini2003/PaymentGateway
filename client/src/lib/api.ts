@@ -1,4 +1,4 @@
-import { User, Subscription, PaymentFormData, RazorpayOrder, Transaction, SubscriptionNotification } from "./types";
+import { User, Subscription, PaymentFormData, RazorpayOrder, Transaction, SubscriptionNotification, SubscriptionPayment } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import { useAuth } from '@/hooks/useAuth';
@@ -111,7 +111,7 @@ class ApiClient {
   async createSubscription(data: { planId: string }) {
     const response = await this.request<{
       success: boolean;
-      subscription: any
+      subscription: Subscription
     }>('/api/payment/subscribe', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -204,7 +204,7 @@ class ApiClient {
   async getSubscriptionPayments(subscriptionId: string) {
     return this.request<{
       success: boolean;
-      payments: any[];
+      payments: SubscriptionPayment[];
     }>(`/api/payment/subscriptions/${subscriptionId}/payments`);
   }
 }

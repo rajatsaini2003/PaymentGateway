@@ -12,7 +12,6 @@ import { SubscriptionList } from '@/components/SubscriptionList';
 export default function DashboardPage() {
   const { user,isTokenExpired, isAuthenticated, logout } = useAuth();
   const router = useRouter();
-  console.log(user)
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {

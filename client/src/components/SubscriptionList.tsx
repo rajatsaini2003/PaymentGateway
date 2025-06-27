@@ -29,8 +29,9 @@ export function SubscriptionList() {
       setSubscriptions(data.subscriptions);
       setNotifications(data.notifications);
       setError('');
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch subscriptions');
+    } catch (err) {
+      console.error(err)
+      setError('Failed to fetch subscriptions');
     } finally {
       setLoading(false);
     }
@@ -43,6 +44,7 @@ export function SubscriptionList() {
       await api.cancelSubscription({ subscriptionId });
       await fetchSubscriptionsAndNotifications();
     } catch (err) {
+      console.error(err)
       setError('Failed to cancel subscription');
     } finally {
       setCancelingId(null);
@@ -62,8 +64,9 @@ export function SubscriptionList() {
         )
       );
       setTimeout(fetchSubscriptionsAndNotifications, 500);
-    } catch (err: any) {
-      setError(err.message || 'Failed to sync subscription status');
+    } catch (err) {
+      console.error(err)
+      setError( 'Failed to sync subscription status');
     } finally {
       setSyncingId(null);
     }
@@ -121,7 +124,7 @@ export function SubscriptionList() {
     ].join(' ');
 
     return (
-      <div key={subscription._id} className={cardClass}>
+      <div key={subscription.id} className={cardClass}>
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">

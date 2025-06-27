@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/lib/api';
 import { loadRazorpay } from '@/lib/razorpay';
 import { useAuth } from '@/hooks/useAuth';
+import { RazorpaySubscriptionResponse, Subscription } from '@/lib/types';
 
 const SUBSCRIPTION_PLANS = [
   { id: 'plan_Qj8nMr5pdMtqBB', name: 'Basic Plan', price: 100, duration: 'Monthly' },
@@ -26,11 +27,11 @@ export function SubscriptionForm() {
         // Collect plan IDs of active subscriptions
         setActivePlans(
           subs
-            .filter((sub: any) => sub.status === 'active')
-            .map((sub: any) => sub.razorpay_plan_id)
+            .filter((sub: Subscription) => sub.status === 'active')
+            .map((sub: Subscription) => sub.razorpay_plan_id)
         );
       } catch (err) {
-        // ignore error
+        console.error(err)
       }
     };
     fetchSubscriptions();
@@ -60,7 +61,7 @@ export function SubscriptionForm() {
         subscription_id: subscription.subscription_id,
         name: 'Your App Subscription',
         description: `${planId} subscription`,
-        handler: async (response: any) => {
+        handler: async (response: RazorpaySubscriptionResponse) => {
           try {
             await api.verifySubscription({
               razorpay_payment_id: response.razorpay_payment_id,
@@ -72,6 +73,7 @@ export function SubscriptionForm() {
             alert('Subscription successful!');
             setActivePlans((prev) => [...prev, planId]);
           } catch (err) {
+            console.error(err)
             setError('Subscription verification failed');
           }
         },

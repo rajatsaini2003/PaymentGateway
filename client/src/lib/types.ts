@@ -23,7 +23,7 @@ export interface PendingInvoice {
 }
 
 export interface Subscription {
-  _id: string;
+  id: string;
   user: string;
   razorpay_subscription_id: string;
   razorpay_plan_id: string;
@@ -69,7 +69,7 @@ export interface RazorpaySubscription {
   current_end: number;
   ended_at?: number;
   quantity: number;
-  notes: Record<string, any>;
+  notes: Record<string, unknown>;
   charge_at: number;
   start_at: number;
   end_at: number;
@@ -107,7 +107,7 @@ export interface RazorpayPayment {
   vpa?: string;
   email: string;
   contact: string;
-  notes: Record<string, any>;
+  notes: Record<string, unknown>;
   fee?: number;
   tax?: number;
   error_code?: string;
@@ -115,7 +115,7 @@ export interface RazorpayPayment {
   error_source?: string;
   error_step?: string;
   error_reason?: string;
-  acquirer_data?: Record<string, any>;
+  acquirer_data?: Record<string, unknown>;
   created_at: number;
 }
 export interface RazorpayOrder {
@@ -128,4 +128,25 @@ export interface RazorpayOrder {
 export interface PaymentFormData {
   amount: number;
   currency?: string;
+}
+export interface RazorpayResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+export interface RazorpaySubscriptionResponse {
+  razorpay_payment_id: string;
+  razorpay_subscription_id: string;
+  razorpay_signature: string;
+}
+export interface SubscriptionPayment {
+  id: string;
+  entity: 'payment';
+  amount: number;
+  currency: string;
+  status: string;
+  method: string;
+  created_at: number; // can be converted to Date in frontend
+  // optional fields depending on method type (e.g., card, upi, wallet)
+  [key: string]: unknown; // or define specific fields if needed
 }

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/lib/api';
 import { loadRazorpay } from '@/lib/razorpay';
 import { useAuth } from '@/hooks/useAuth';
+import { RazorpayResponse } from '@/lib/types';
 
 export function PaymentForm() {
   const [amount, setAmount] = useState('');
@@ -42,7 +43,7 @@ export function PaymentForm() {
         name: 'Payment App',
         description: 'Payment for services',
         order_id: order.id,
-        handler: async (response: any) => {
+        handler: async (response: RazorpayResponse) => {
           try {
             await api.verifyPayment({
               razorpay_order_id: response.razorpay_order_id,
@@ -53,6 +54,7 @@ export function PaymentForm() {
             alert('Payment successful!');
             setAmount('');
           } catch (err) {
+            console.error(err)
             setError('Payment verification failed');
           }
         },
