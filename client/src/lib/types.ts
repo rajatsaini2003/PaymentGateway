@@ -23,7 +23,7 @@ export interface PendingInvoice {
 }
 
 export interface Subscription {
-  id: string;
+  _id: string;
   user: string;
   razorpay_subscription_id: string;
   razorpay_plan_id: string;

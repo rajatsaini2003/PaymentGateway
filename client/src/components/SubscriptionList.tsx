@@ -124,7 +124,7 @@ export function SubscriptionList() {
     ].join(' ');
 
     return (
-      <div key={subscription.id} className={cardClass}>
+      <div key={subscription._id} className={cardClass}>
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
